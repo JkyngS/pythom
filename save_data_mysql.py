@@ -7,9 +7,9 @@ load_dotenv()
 
 def connect_mysql(host_name, user_name, pw):
     cnx = mysql.connector.connect(
-        host = host_name,
-        user = user_name,
-        password = pw
+        host=host_name,
+        user=user_name,
+        password=pw
     )
     print(cnx)
     return cnx
@@ -19,7 +19,7 @@ def create_cursor(cnx):
     return cursor
 
 def create_database(cursor, db_name):
-    cursor.execute(f"CREATE DATABASE {db_name}")
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
     print(f"\nBase de dados {db_name} criada")
 
 def show_databases(cursor):
@@ -29,24 +29,23 @@ def show_databases(cursor):
 
 def create_product_table(cursor, db_name, tb_name):    
     cursor.execute(f"""
-        CREATE TABLE {db_name}.{tb_name}(
-                id VARCHAR(100),
-                Produto VARCHAR(100),
-                Categoria_Produto VARCHAR(100),
-                Preco FLOAT(10,2),
-                Frete FLOAT(10,2),
-                Data_Compra DATE,
-                Vendedor VARCHAR(100),
-                Local_Compra VARCHAR(100),
-                Avaliacao_Compra INT,
-                Tipo_Pagamento VARCHAR(100),
-                Qntd_Parcelas INT,
-                Latitude FLOAT(10,2),
-                Longitude FLOAT(10,2),
-                
-                PRIMARY KEY (id));
+        CREATE TABLE IF NOT EXISTS {db_name}.{tb_name} (
+            id VARCHAR(100),
+            Produto VARCHAR(100),
+            Categoria_Produto VARCHAR(100),
+            Preco FLOAT(10,2),
+            Frete FLOAT(10,2),
+            Data_Compra DATE,
+            Vendedor VARCHAR(100),
+            Local_Compra VARCHAR(100),
+            Avaliacao_Compra INT,
+            Tipo_Pagamento VARCHAR(100),
+            Qntd_Parcelas INT,
+            Latitude FLOAT(10,2),
+            Longitude FLOAT(10,2),
+            PRIMARY KEY (id)
+        );
     """)
-                   
     print(f"\nTabela {tb_name} criada")
 
 def show_tables(cursor, db_name):
@@ -59,6 +58,12 @@ def read_csv(path):
     df = pd.read_csv(path)
     return df
 
+def save_csv(df, path):
+    # Cria o diretório se não existir
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    df.to_csv(path, index=False)
+    print(f"Dados salvos em {path}")
+
 def add_product_data(cnx, cursor, df, db_name, tb_name):
     lista = [tuple(row) for _, row in df.iterrows()]
     sql = f"INSERT INTO {db_name}.{tb_name} VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
@@ -70,9 +75,7 @@ def add_product_data(cnx, cursor, df, db_name, tb_name):
 if __name__ == "__main__":
     
     # realizando a conexão com mysql
-    cnx = connect_mysql(('localhost'), 
-                        ('root'),
-                        ('senac'))
+    cnx = connect_mysql('localhost', 'nome_usuario', 'sua_senha')
     cursor = create_cursor(cnx)
 
     # criando a base de dados
@@ -84,5 +87,5 @@ if __name__ == "__main__":
     show_tables(cursor, "db_produtos_teste")
 
     # lendo e adicionando os dados
-    df = read_csv("../data/tb_livros.csv")
+    df = read_csv("data/tb_livros.csv")
     add_product_data(cnx, cursor, df, "db_produtos_teste", "tb_livros")
